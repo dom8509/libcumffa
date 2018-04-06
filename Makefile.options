@@ -1,0 +1,54 @@
+# Get Kernel Type
+KERNEL  	= $(shell uname)
+OS_ARCH 	= $(shell uname -m)
+ARCH_FLAGS  =
+OS_SIZE  	= 64
+COMPUTE_CAP = 35
+
+# set platform type
+ifeq ($(KERNEL), Linux)
+ ifeq ($(OS_ARCH), x86_64)
+  # 64 Bit linux architecture
+  PLATFORM 	= LINUXINTEL64
+ else
+  # 32 Bit linux architecutre
+  PLATFORM 	= LINUXINTEL32
+  OS_SIZE 	= 32
+ endif
+else
+ ifeq ($(KERNEL), Darwin)
+  PLATFORM 	= MAC64
+ else
+  PLATFORM 	=
+ endif
+endif
+
+# set host compiler
+ifeq ($(shell uname -m | sed -e 's/.*\(arm\).*/\1/g'), arm)
+ CXX 		= arm-linux-gnueabihf-g++
+ AR 		= arm-linux-gnueabihf-ar
+ ARCH_FLAGS	= -target-cpu-arch ARM
+ COMPUTE_CAP = 32
+else
+ CXX=g++
+ AR=ar
+endif
+
+# set cuda compiler
+NVCC 		= nvcc -ccbin $(CXX)
+
+# debug and code optimization flags
+DEBUG 		= -g
+OPTIMISE	= -O0
+
+NVCCFLAGS   = -m$(OS_SIZE) $(ARCH_FLAGS) -D$(PLATFORM) -DCUDA_ERROR_CHECK -Xcompiler "-fPIC" -arch=compute_$(COMPUTE_CAP) -lineinfo -Xcompiler -rdynamic -lineinfo
+CXXFLAGS    = -std=c++11 -Wall -fpic -D$(PLATFORM) -DOS_SIZE=$(OS_SIZE) $(DEBUG) $(OPTIMISE)
+NVCCLDFLAGS = -arch=compute_$(COMPUTE_CAP) -Xcompiler "-fPIC" -dlink
+CXXLDFLAGS  =
+
+# set specific nvcc flags
+ifeq ($(shell test $(COMPUTE_CAP) -gt 35; echo $$?), 0)
+ NVCCFLAGS 	+= -rdc=true
+else
+ NVCCFLAGS 	+= -rdc=false
+endif

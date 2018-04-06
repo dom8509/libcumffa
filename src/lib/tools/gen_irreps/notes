@@ -1,0 +1,5 @@
+call:
+./gen_irreps OSSL > generated/irreps_ossl.cc
+./gen_irreps CUDA > generated/irreps_cuda.cc
+./gen_irreps NTL > generated/irreps_ntl.cc
+CUDA_PY
